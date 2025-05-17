@@ -4,12 +4,30 @@
 (block file
 
   (macro anon_file_type_transition
-	 ((type ARG1)(type ARG2)(class ARG3)(name ARG4)(type ARG5))
-	 (typetransition ARG1 ARG2 ARG3 ARG4 ARG5)
-	 (allow ARG1 ARG2 addname_dir))
+         ((type ARG1)(type ARG2)(class ARG3)(name ARG4)(type ARG5))
+         (typetransition ARG1 ARG2 ARG3 ARG4 ARG5)
+         (allow ARG1 ARG2 addname_dir))
+
+  (macro auditreadaccess_all_dirs ((type ARG1))
+         (allow ARG1 typeattr (dir (getattr read))))
+
+  (macro dontaudit_auditaccess_all_dirs ((type ARG1))
+         (dontaudit ARG1 typeattr (dir (audit_access))))
+
+  (macro dontaudit_getattr_all_files ((type ARG1))
+         (dontaudit ARG1 typeattr (file (getattr))))
+
+  (macro dontaudit_search_all_dirs ((type ARG1))
+         (dontaudit ARG1 typeattr search_dir))
+
+  (macro getattr_all_files ((type ARG1))
+         (allow ARG1 typeattr (file (getattr))))
+
+  (macro getattr_all_lnk_files ((type ARG1))
+         (allow ARG1 typeattr (lnk_file (getattr))))
 
   (macro type ((type ARG1))
-	 (typeattributeset typeattr ARG1))
+         (typeattributeset typeattr ARG1))
 
   (typeattribute typeattr)
 
