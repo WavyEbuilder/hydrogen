@@ -6,6 +6,9 @@
   (filecon "/usr/bin" dir file_context)
   (filecon "/usr/bin/.*" any file_context)
 
+  (macro auditexecuteaccess_file_files ((type ARG1))
+         (allow ARG1 file (file (execute getattr))))
+
   (macro data_file_type_transition_file ((type ARG1))
          (call .data.file_type_transition
                (ARG1 file dir "bin"))
@@ -14,11 +17,23 @@
          (call .data.file_type_transition
                (ARG1 file dir "sbin")))
 
+  (macro dontaudit_readinherited_file_files ((type ARG1))
+         (dontaudit ARG1 file readinherited_file))
+
+  (macro dontaudit_execute_no_trans_file_files ((type ARG1))
+         (dontaudit ARG1 file (file (execute_no_trans))))
+
   (macro root_file_type_transition_file ((type ARG1))
          (call .root.file_type_transition
                (ARG1 file dir "bin"))
          (call .root.file_type_transition
                (ARG1 file dir "sbin")))
+
+  (macro setattr_file_dirs ((type ARG1))
+         (allow ARG1 file (dir (setattr))))
+
+  (macro setattr_file_files ((type ARG1))
+         (allow ARG1 file (file (setattr))))
 
   (blockinherit .file.exec.template)
   (blockinherit .file.macro_template_dirs)
