@@ -1,0 +1,12 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(block turnstile
+
+  (call .unconfined.type (subj))
+
+  (blockinherit .sys.agent.template))
+
+(in after turnstile.exec
+
+    (filecon "/usr/bin/turnstiled" file file_context))
