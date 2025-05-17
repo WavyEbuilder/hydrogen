@@ -1,7 +1,64 @@
 ;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
 ;; SPDX-License-Identifier: GPL-3.0-or-later
 
+(block image
+
+  (blockinherit .file.base_template)
+  (blockinherit .file.macro_template_dirs)
+  (blockinherit .file.macro_template_files)
+
+  (call .mount.image.type (file))
+
+  (call .tmp.associate_fs (file))
+
+  (call .xattr.associate_fs (file)))
+
 (block mount
+
+  (macro dontaudit_link_subj_keyrings ((type ARG1))
+	 (dontaudit ARG1 subj (key (link))))
+
+  (blockinherit .hybrid.agent.template)
+
+  (block image
+
+    (macro deletename_all_dirs ((type ARG1))
+           (allow ARG1 typeattr deletename_dir))
+
+    (macro getattr_all_files ((type ARG1))
+           (allow ARG1 typeattr (file (getattr))))
+
+    (macro list_all_dirs ((type ARG1))
+           (allow ARG1 typeattr list_dir))
+
+    (macro manage_all_files ((type ARG1))
+           (allow ARG1 typeattr manage_file))
+
+    (macro read_all_files ((type ARG1))
+           (allow ARG1 typeattr read_file))
+
+    (macro readinherited_all_files ((type ARG1))
+           (allow ARG1 typeattr readinherited_file))
+
+    (macro readwrite_all_dirs ((type ARG1))
+           (allow ARG1 typeattr readwrite_dir))
+
+    (macro readwrite_all_files ((type ARG1))
+           (allow ARG1 typeattr readwrite_file))
+
+    (macro relabel_all_files ((type ARG1))
+           (allow ARG1 typeattr relabel_file))
+
+    (macro search_all_dirs ((type ARG1))
+           (allow ARG1 typeattr search_dir))
+
+    (macro setattr_all_files ((type ARG1))
+           (allow ARG1 typeattr (file (setattr))))
+
+    (macro type ((type ARG1))
+           (typeattributeset typeattr ARG1))
+
+    (typeattribute typeattr))
 
   (block mountpoint
 
@@ -29,4 +86,39 @@
     (macro type ((type ARG1))
            (typeattributeset typeattr ARG1))
 
-    (typeattribute typeattr)))
+    (typeattribute typeattr))
+
+  (block run
+
+    (filecon "/run/mount" dir file_context)
+    (filecon "/run/mount/.*" any ())
+
+    (macro watch_file_dirs ((type ARG1))
+           (allow ARG1 file (dir (watch))))
+
+    (macro watch_file_files ((type ARG1))
+           (allow ARG1 file (file (watch))))
+
+    (macro watchreads_file_files ((type ARG1))
+           (allow ARG1 file (file (watch_reads))))
+
+    (macro run_file_type_transition_file ((type ARG1))
+           (call .run.file_type_transition
+                 (ARG1 file dir "mount")))
+
+    (blockinherit .file.macro_template_dirs)
+    (blockinherit .file.macro_template_files)
+    (blockinherit .file.run.base_template)
+
+    (call .rbacsep.exempt.obj.type (file))))
+
+(in file.unconfined
+
+    (call .mount.run.run_file_type_transition_file (typeattr)))
+
+(in after mount.exec
+
+    (filecon "/usr/bin/mount" file file_context)
+    (filecon "/usr/bin/mount\..*" file file_context)
+    (filecon "/usr/bin/umount" file file_context)
+    (filecon "/usr/bin/umount\..*" file file_context))
