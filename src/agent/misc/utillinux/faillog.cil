@@ -1,0 +1,37 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(block faillog
+
+  (blockinherit .sys.agent.template)
+
+  (call log.read_file_files (subj))
+
+  (call .locale.data.map_file_pattern.type (subj))
+  (call .locale.read_file_pattern.type (subj))
+
+  (call .log.search_file_pattern.type (subj))
+
+  (call .nss.passwdgroup.type (subj))
+
+  (call .random.read_sysctlfile_pattern.type (subj))
+
+  (block log
+
+    (filecon "/var/log/faillog" file file_context)
+    (filecon "/var/log/faillog\..*" file file_context)
+
+    (macro log_file_type_transition_file ((type ARG1))
+           (call .log.file_type_transition
+                 (ARG1 file file "faillog")))
+
+    (blockinherit .file.log.base_template)
+    (blockinherit .file.macro_template_files)))
+
+(in file.unconfined
+
+    (call .faillog.log.log_file_type_transition_file (typeattr)))
+
+(in after faillog.exec
+
+    (filecon "/usr/bin/faillog" file file_context))
