@@ -1,0 +1,12 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(block tmpfiles
+
+  (call .unconfined.type (subj))
+
+  (blockinherit .sys.agent.template))
+
+(in after tmpfiles.exec
+
+    (filecon "/usr/bin/systemd-tmpfiles" file file_context))
