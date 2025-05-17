@@ -1,0 +1,45 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(block dosfstools
+
+  (blockinherit .sys.agent.template)
+
+  (call .console.readwriteinherited_serialtermdev_chr_files (subj))
+
+  (call .dev.traverse_sysfile_pattern.type (subj))
+
+  (call .devices.read_sysfile_pattern.type (subj))
+
+  (call .locale.data.map_file_pattern.type (subj))
+  (call .locale.read_file_pattern.type (subj))
+
+  (call .stordev.readwrite.type (subj))
+  (call .stordev.readwrite_all_blk_files (subj))
+  (call .stordev.readwrite_all_chr_files (subj))
+
+  (call .tmp.search_file_pattern.type (subj)))
+
+(in dinit.helper
+
+    (call .dosfstools.subj_type_transition (subj)))
+
+(in fsck
+
+    (call .dosfstools.nnptransition_subj_processes (subj))
+    (call .dosfstools.subj_type_transition (subj)))
+
+(in after dosfstools.exec
+
+    (macro auditexecute_file_files ((type ARG1))
+           (allow ARG1 file (file (getattr execute))))
+
+    (filecon "/usr/bin/dump\.exfat" file file_context)
+    (filecon "/usr/bin/exfat2img" file file_context)
+    (filecon "/usr/bin/exfatlabel" file file_context)
+    (filecon "/usr/bin/fatlabel" file file_context)
+    (filecon "/usr/bin/fsck\.exfat" file file_context)
+    (filecon "/usr/bin/fsck\.fat" file file_context)
+    (filecon "/usr/bin/mkfs\.exfat" file file_context)
+    (filecon "/usr/bin/mkfs\.fat" file file_context)
+    (filecon "/usr/bin/tune\.exfat" file file_context))
