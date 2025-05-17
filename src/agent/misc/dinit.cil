@@ -1,0 +1,176 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(block dinit
+
+  (blockinherit .hybrid.agent.template)
+
+  (boolean allow_unknown_agents true)
+
+  (booleanif allow_unknown_agents
+             (true
+
+               (call .sys.exec_subj_type_transition (subj))
+
+               (allow subj .sys.subj (process (getpgid sigkill sigstop signal)))))
+
+  (macro connectto_all_unix_stream_sockets ((type ARG1))
+         (allow ARG1 subj (unix_stream_socket (connectto))))
+
+  (macro unix_stream_connect ((type ARG1))
+         (call connectto_all_unix_stream_sockets (ARG1))
+         (call .dinit.run.write_file_sock_files (ARG1)))
+
+  (macro readwrite_subj_unix_stream_sockets ((type ARG1))
+         (allow ARG1 subj readwrite_unix_stream_socket))
+
+  (allow subj self create_unix_dgram_socket)
+  (allow subj self create_unix_stream_socket)
+  (allow subj self (capability (kill sys_admin sys_boot)))
+  (allow subj self (capability2 (syslog)))
+  (allow subj self (unix_stream_socket (accept connectto listen)))
+
+  (allow subj .sys.agent.typeattr (process (getpgid sigkill sigstop signal)))
+
+  (call run.manage_file_sock_files (subj))
+  (call run.run_file_type_transition_file (subj))
+  (call run.sys_tmpfs_file_type_transition_file (subj))
+
+  (call service.list_file_dirs (subj))
+  (call service.read_file_files (subj))
+
+  ;; After udev is loaded and has relabeled /dev, dinit might
+  ;; loose access to /dev/console as it is no longer devtmp.fs
+  (call .console.readwrite_serialtermdev_chr_files (subj))
+
+  ;; Comprimise for /dev/console in race with udev to create it
+  ;; TODO: implement relabeling of /dev in dinit
+  (call .devtmp.readwrite_fs_chr_files (subj))
+  (call .devtmp.search_fs_dirs (subj))
+
+  (call .devlog.dev_file_type_transition_file (subj))
+
+  (call .file.service.read_all_files (subj))
+
+  (call .log.addname_file_dirs (subj))
+  (call .log.manage_file_files (subj))
+  (call .log.traverse_file_pattern.type (subj))
+
+  (call .proc.mount_fs (subj))
+  (call .proc.mounton_fs_dirs (subj))
+  (call .proc.unmount_fs (subj))
+
+  (call .run.deletename_file_dirs (subj))
+
+  (call .shell.exec.execute_file_files (subj))
+
+  ;; /run may not be labelled properly by the time the control socket is created.
+  (call .sys.tmpfs.addname_file_dirs (subj))
+
+  (call .sys.syslogconsole_system (subj))
+
+  ;; legacy /var/run
+  (call .var.traverse_file_pattern.type (subj))
+
+  (block run
+
+    (filecon "/run/dinitctl" socket file_context)
+
+    (macro run_file_type_transition_file ((type ARG1))
+           (call .run.file_type_transition
+                 (ARG1 file sock_file "dinitctl")))
+
+    ;; /run may not be labelled properly by the time the control socket is created.
+    (macro sys_tmpfs_file_type_transition_file ((type ARG1))
+           (call .sys.tmpfs.file_type_transition
+                 (ARG1 file sock_file "dinitctl")))
+
+    (blockinherit .file.run.template))
+
+  (block service
+
+    (filecon "/usr/lib/dinit\.d" dir file_context)
+    (filecon "/usr/lib/dinit\.d/.*" any file_context)
+
+    (macro conf_file_type_transition_file ((type ARG1))
+           (call .conf.file_type_transition
+                 (ARG1 file dir "dinit\.d")))
+
+    (macro lib_file_type_transition_file ((type ARG1))
+           (call .lib.file_type_transition
+                 (ARG1 file dir "dinit\.d")))
+
+    (call .file.service.type (file))
+
+    (blockinherit .file.macro_template_dirs)
+    (blockinherit .file.macro_template_lnk_files)
+    (blockinherit .file.service.template)))
+
+(in file.data
+
+    (block dinit
+
+      (macro type ((type ARG1))
+             (typeattributeset typeattr ARG1))
+
+      (blockinherit .file.all_macro_template_dirs)
+      (blockinherit .file.all_macro_template_files)
+      (blockinherit .file.all_macro_template_lnk_files)
+
+      (typeattribute typeattr)
+
+      (call .file.data.type (typeattr))
+
+      (block base_template
+
+        (blockabstract base_template)
+
+        (blockinherit .file.data.base_template)
+
+        (call .file.data.systemd.type (file)))
+
+      (block template
+
+        (blockabstract template)
+
+        (blockinherit .file.data.dinit.base_template)
+        (blockinherit .file.macro_template_dirs)
+        (blockinherit .file.macro_template_files)
+        (blockinherit .file.macro_template_lnk_files))))
+
+(in file
+
+    (block service
+
+      (macro type ((type ARG1))
+             (typeattributeset typeattr ARG1))
+
+      (blockinherit file.all_macro_template_files)
+
+      (typeattribute typeattr)
+
+      (call file.data.dinit.type (typeattr))
+
+      (block base_template
+
+        (blockabstract base_template)
+
+        (blockinherit .file.base_template)
+
+        (call .file.service.type (file)))
+
+      (block template
+
+        (blockabstract template)
+
+        (blockinherit .file.macro_template_files)
+        (blockinherit .file.service.base_template))))
+
+(in file.unconfined
+
+    (call .dinit.service.conf_file_type_transition_file (typeattr))
+    (call .dinit.service.lib_file_type_transition_file (typeattr)))
+
+(in after dinit.exec
+
+    (filecon "/usr/bin/dinit" file file_context))

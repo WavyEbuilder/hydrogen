@@ -1,0 +1,468 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(in dinit
+
+    (block helper
+
+      (call .dinit.unix_stream_connect (subj))
+      (call .dinit.readwrite_subj_unix_stream_sockets (subj))
+
+      (call .dinit.service.search_file_dirs (subj))
+
+      (call .cmdline.read_procfile_pattern.type (subj))
+
+      (call .coreutils.exec.execute_file_files (subj))
+      (call .shell.exec.execute_file_files (subj))
+
+      ;; After udev is loaded and has relabeled /dev, dinit might
+      ;; loose access to /dev/console as it is no longer devtmp.fs
+      (call .console.readwrite_serialtermdev_chr_files (subj))
+
+      ;; After udev is loaded and has relabeled /dev, dinit might
+      ;; loose access to /dev/null as it is no longer devtmp.fs
+      (call .null.readwrite_nodedev_chr_files (subj))
+
+      ;; Comprimise for /dev/null in race with udev to create it
+      ;; TODO: implement relabeling of /dev in dinit
+      (call .devtmp.readwrite_fs_chr_files (subj))
+
+      (call .caplastcap.read_sysctlfile_pattern.type (subj))
+
+      (call .cgroup.readwrite_fs_files (subj))
+      (call .cgroup.search_fs_pattern.type (subj))
+
+      (call .dev.list_file_pattern.type (subj))
+      (call .dev.relabel_all_blk_files (subj))
+      (call .dev.relabel_all_chr_files (subj))
+      (call .dev.relabelto_file_dirs (subj))
+      (call .dev.relabelto_file_fifo_files (subj))
+      (call .dev.relabelto_file_files (subj))
+      (call .dev.relabelto_file_lnk_files (subj))
+      (call .dev.relabelto_file_sock_files (subj))
+
+      (call .devtmp.list_fs_dirs (subj))
+      (call .devtmp.relabelfrom_fs_dirs (subj))
+      (call .devtmp.relabelfrom_fs_blk_files (subj))
+      (call .devtmp.relabelfrom_fs_chr_files (subj))
+      (call .devtmp.relabelfrom_fs_fifo_files (subj))
+      (call .devtmp.relabelfrom_fs_lnk_files (subj))
+      (call .devtmp.relabelfrom_fs_sock_files (subj))
+      (call .devtmp.search_fs_dirs (subj))
+
+      (call .file.dontaudit_search_all_dirs (subj))
+
+      (call .fs.getattr_all_fs (subj))
+
+      (call .hostname.read_file_files (subj))
+
+      (call .machineid.read_file_files (subj))
+
+      (call .selinux.file.map_file_files (subj))
+      (call .selinux.file.read_file_pattern.type (subj))
+      (call .selinux.file.search_file_dirs (subj))
+
+      (call .selinux.linked.type (subj))
+
+      ;; Relabel /dev
+      (call .setfiles.exec.execute_file_files (subj))
+
+      (call .run.addname_file_dirs (subj))
+      (call .run.create_file_dirs (subj))
+
+      ;; For kdump
+      (allow subj .dinit.helper.exec.file (file (execute_no_trans)))
+
+      (call .fsck.subj_type_transition (subj))
+
+      (call .hostname.subj_type_transition (subj))
+
+      (call .mount.subj_type_transition (subj))
+
+      (call .tmpfiles.subj_type_transition (subj))
+
+      (call .udev.subj_type_transition (subj))
+
+      (call binfmt.subj_type_transition (subj))
+      (call hwclock.subj_type_transition (subj))
+      (call kmod.subj_type_transition (subj))
+      (call lo.subj_type_transition (subj))
+      (call mnt.subj_type_transition (subj))
+      (call seedrng.subj_type_transition (subj))
+      (call swap.subj_type_transition (subj))
+      (call swclock.subj_type_transition (subj))
+      (call sysctl.subj_type_transition (subj))
+
+      (blockinherit .sys.agent.template)
+
+      (block binfmt
+
+        (call conf.list_file_dirs (subj))
+        (call conf.read_file_files (subj))
+        (call conf.read_file_lnk_files (subj))
+
+        (call data.list_file_dirs (subj))
+        (call data.read_file_files (subj))
+
+        (call run.list_file_dirs (subj))
+        (call run.read_file_files (subj))
+
+        (call .binfmtmisc.auditwriteaccess_fs_dirs (subj))
+        (call .binfmtmisc.getattr_fs (subj))
+        (call .binfmtmisc.search_fs_dirs (subj))
+        (call .binfmtmisc.write_fs_files (subj))
+
+        (call .fs.search_sysctlfile_pattern.type (subj))
+
+        (call .run.search_file_pattern.type (subj))
+
+        (call .sysctl.search_procfile_pattern.type (subj))
+
+        (block conf
+
+          (filecon "/etc/binfmt\.d" dir file_context)
+          (filecon "/etc/binfmt\.d/.*" any file_context)
+
+          (macro conf_file_type_transition_file ((type ARG1))
+                 (call .conf.file_type_transition
+                       (ARG1 file dir "binfmt.d")))
+
+          (blockinherit .file.conf.template))
+
+        (block data
+
+          (filecon "/usr/lib/binfmt\.d" dir file_context)
+          (filecon "/usr/lib/binfmt\.d/.*" any file_context)
+
+          (macro lib_file_type_transition_file ((type ARG1))
+                 (call .lib.file_type_transition
+                       (ARG1 file dir "binfmt.d")))
+
+          (blockinherit .file.data.base_template)
+          (blockinherit .file.macro_template_dirs)
+          (blockinherit .file.macro_template_files))
+
+        (block run
+
+          (filecon "/run/binfmt\.d" dir file_context)
+          (filecon "/run/binfmt\.d/.*" any file_context)
+
+          (macro run_file_type_transition_file ((type ARG1))
+                 (call .run.file_type_transition
+                       (ARG1 file dir "binfmt.d")))
+
+          (blockinherit .file.macro_template_dirs)
+          (blockinherit .file.macro_template_files)
+          (blockinherit .file.run.base_template))
+
+        (blockinherit .sys.agent.template))
+
+      (block hwclock
+
+        (call .clock.write_nodedev_chr_files (subj))
+
+        ;; After udev is loaded and has relabeled /dev, hwclock might
+        ;; loose access to /dev/null as it is no longer devtmp.fs
+        (call .null.append_nodedev_chr_files (subj))
+        (call .null.read_nodedev_chr_files (subj))
+
+        ;; Comprimise for /dev/null in race with udev to create it
+        ;; TODO: implement relabeling of /dev in dinit
+        (call .devtmp.append_fs_chr_files (subj))
+        (call .devtmp.read_fs_chr_files (subj))
+
+        (call .devtmp.search_fs_dirs (subj))
+
+        (call .locale.data.map_file_pattern.type (subj))
+        (call .locale.read_file_pattern.type (subj))
+
+        (allow subj self (capability (sys_time)))
+
+        (blockinherit .sys.agent.template))
+
+      (block kmod
+
+        ;; After udev is loaded and has relabeled /dev, kmod might
+        ;; loose access to /dev/null as it is no longer devtmp.fs
+        (call .null.append_nodedev_chr_files (subj))
+        (call .null.read_nodedev_chr_files (subj))
+
+        ;; Comprimise for /dev/null in race with udev to create it
+        ;; TODO: implement relabeling of /dev in dinit
+        (call .devtmp.append_fs_chr_files (subj))
+        (call .devtmp.read_fs_chr_files (subj))
+
+        (call conf.list_file_dirs (subj))
+        (call conf.read_file_files (subj))
+        (call conf.read_file_lnk_files (subj))
+
+        (call data.list_file_dirs (subj))
+        (call data.read_file_files (subj))
+
+        (call run.list_file_dirs (subj))
+        (call run.read_file_files (subj))
+
+        (call .debug.search_fs_pattern.type (subj))
+
+        (call .cmdline.read_procfile_pattern.type (subj))
+
+        (call .file.mod.load_all_files (subj))
+        (call .file.mod.map_all_files (subj))
+        (call .file.mod.read_all_files (subj))
+
+        (call .kmod.conf.list_file_dirs (subj))
+        (call .kmod.conf.read_file_files (subj))
+        (call .kmod.data.list_file_dirs (subj))
+        (call .kmod.data.read_file_files (subj))
+        (call .kmod.manage_file_files (subj))
+        (call .kmod.map_file_files (subj))
+        (call .kmod.run.list_file_dirs (subj))
+        (call .kmod.run.read_file_files (subj))
+
+        (call .mod.delete_file_files (subj))
+        (call .mod.deletename_file_dirs (subj))
+        (call .mod.read_file_lnk_files (subj))
+
+        (call .run.search_file_pattern.type (subj))
+
+        (call .sys.moduleload.type (subj))
+        ;; For module signing, kmod signature is checked using the public
+        ;; X.509 keys on the kernel's system key ring:
+        ;; https://www.kernel.org/doc/html/v4.15/admin-guide/module-signing.html
+        (call .sys.search_subj_keyrings (subj))
+
+        (call .sysfile.module.list_all_dirs (subj))
+        (call .sysfile.module.read_all_files (subj))
+
+        (allow subj self (capability (sys_module)))
+        (allow subj self (system (module_load)))
+
+        (allow subj .sys.subj (system (module_request)))
+
+        (block conf
+
+          (filecon "/etc/modules" file file_context)
+          (filecon "/etc/modules\..*" file file_context)
+
+          (filecon "/etc/modules-load\.d" dir file_context)
+          (filecon "/etc/modules-load\.d/.*" any file_context)
+
+          (macro conf_file_type_transition_file ((type ARG1))
+                 (call .conf.file_type_transition
+                       (ARG1 file dir "modules-load.d"))
+                 (call .conf.file_type_transition
+                       (ARG1 file file "modules")))
+
+          (blockinherit .file.conf.template))
+
+        (block data
+
+          (filecon "/usr/lib/modules-load\.d" dir file_context)
+          (filecon "/usr/lib/modules-load\.d/.*" any file_context)
+
+          (macro lib_file_type_transition_file ((type ARG1))
+                 (call .lib.file_type_transition
+                       (ARG1 file dir "modules-load.d")))
+
+          (blockinherit .file.data.base_template)
+          (blockinherit .file.macro_template_dirs)
+          (blockinherit .file.macro_template_files))
+
+        (block run
+
+          (filecon "/run/modules-load\.d" dir file_context)
+          (filecon "/run/modules-load\.d/.*" any file_context)
+
+          (macro run_file_type_transition_file ((type ARG1))
+                 (call .run.file_type_transition
+                       (ARG1 file dir "modules-load.d")))
+
+          (blockinherit .file.macro_template_dirs)
+          (blockinherit .file.macro_template_files)
+          (blockinherit .file.run.base_template))
+
+        (blockinherit .sys.agent.template))
+
+      (block lo
+
+        (allow subj self (capability (net_admin)))
+        (allow subj self create_udp_socket)
+
+        (blockinherit .sys.agent.template))
+
+      (block mnt
+
+        (call .console.readwriteinherited_serialtermdev_chr_files (subj))
+
+        (call .devtmp.addname_fs_dirs (subj))
+        (call .devtmp.create_fs_dirs (subj))
+
+        (call .fs.mount_all_fs (subj))
+
+        (call .fstab.read_file_files (subj))
+
+        (call .mount.mountpoint.mounton_all_dirs (subj))
+
+        ;; Lookup the tty group
+        ;; auto *ttyg = getgrnam("tty");
+        (call .nss.passwdgroup.type (subj))
+
+        ;; remount / rw
+        (call .xattr.remount_fs (subj))
+
+        ;; After udev is loaded and has relabeled /dev, dinit might
+        ;; loose access to /dev/null as it is no longer devtmp.fs
+        (call .null.append_nodedev_chr_files (subj))
+        (call .null.read_nodedev_chr_files (subj))
+
+        ;; Comprimise for /dev/null in race with udev to create it
+        ;; TODO: implement relabeling of /dev in dinit
+        (call .devtmp.append_fs_chr_files (subj))
+        (call .devtmp.read_fs_chr_files (subj))
+
+        ;; Needed for mount(2) and umount(2)
+        (allow subj self (capability (sys_admin)))
+
+        (blockinherit .sys.agent.template))
+
+      (block seedrng
+
+        (call state.manage_file_dirs (subj))
+        (call state.manage_file_files (subj))
+
+        (call .devtmp.search_fs_dirs (subj))
+
+        (call .random.read_nodedev_chr_files (subj))
+        (call .random.read_sysctlfile_pattern.type (subj))
+
+        (call .state.search_file_pattern.type (subj))
+
+        (allow subj self (capability (sys_admin)))
+
+        (block state
+
+          (filecon "/var/lib/seedrng" dir file_context)
+          (filecon "/var/lib/seedrng/.*" any file_context)
+
+          (macro state_file_type_transition_file ((type ARG1))
+                 (call .state.file_type_transition
+                       (ARG1 file dir "seedrng")))
+
+          (blockinherit .file.macro_template_dirs)
+          (blockinherit .file.macro_template_files)
+          (blockinherit .file.state.base_template))
+
+        (blockinherit .sys.agent.template))
+
+      (block swap
+
+        (call .fstab.read_file_files (subj))
+
+        (blockinherit .sys.agent.template))
+
+      (block swclock
+
+        (call state.manage_file_dirs (subj))
+        (call state.manage_file_files (subj))
+
+        (call .state.search_file_pattern.type (subj))
+
+        (block state
+
+          (filecon "/var/lib/swclock" dir file_context)
+          (filecon "/var/lib/swclock/.*" any file_context)
+
+          (macro state_file_type_transition_file ((type ARG1))
+                 (call .state.file_type_transition
+                       (ARG1 file dir "swclock")))
+
+          (blockinherit .file.macro_template_dirs)
+          (blockinherit .file.macro_template_files)
+          (blockinherit .file.state.base_template))
+
+        (blockinherit .sys.agent.template))
+
+      (block sysctl
+
+        (call .fs.search_sysctlfile_pattern.type (subj))
+
+        (call .run.search_file_pattern.type (subj))
+
+        (call .sysctl.conf.list_file_dirs (subj))
+        (call .sysctl.conf.read_file_files (subj))
+        (call .sysctl.conf.read_file_lnk_files (subj))
+
+        (call .sysctl.data.list_file_dirs (subj))
+        (call .sysctl.data.read_file_files (subj))
+
+        (call .sysctl.run.list_file_dirs (subj))
+        (call .sysctl.run.read_file_files (subj))
+
+        (call .sysctl.search_procfile_pattern.type (subj))
+
+        (call .sysctlfile.list_all_dirs (subj))
+        (call .sysctlfile.readwrite_all_files (subj))
+
+        (blockinherit .sys.agent.template))))
+
+(in file.unconfined
+
+    (call .dinit.helper.exec.dinit_lib_file_type_transition_file (typeattr))
+    (call .dinit.helper.binfmt.conf.conf_file_type_transition_file (typeattr))
+    (call .dinit.helper.binfmt.data.lib_file_type_transition_file (typeattr))
+    (call .dinit.helper.binfmt.run.run_file_type_transition_file (typeattr))
+    (call .dinit.helper.kmod.conf.conf_file_type_transition_file (typeattr))
+    (call .dinit.helper.kmod.data.lib_file_type_transition_file (typeattr))
+    (call .dinit.helper.kmod.run.run_file_type_transition_file (typeattr))
+    (call .dinit.helper.seedrng.state.state_file_type_transition_file (typeattr))
+    (call .dinit.helper.swclock.state.state_file_type_transition_file (typeattr)))
+
+(in after dinit.helper.exec
+
+    (macro dinit_lib_file_type_transition_file ((type ARG1))
+           (call .dinit.service.file_type_transition
+                 (ARG1 file dir "helpers"))
+           (call .dinit.service.file_type_transition
+                 (ARG1 file dir "scripts")))
+
+    (filecon "/usr/lib/dinit\.d/early/helpers/.*" file file_context)
+    (filecon "/usr/lib/dinit\.d/early/scripts/.*" file file_context)
+
+    (filecon "/usr/bin/dinit-devd" file file_context)
+    (filecon "/usr/bin/udevd.wrapper" file file_context))
+
+(in after dinit.helper.binfmt.exec
+
+    (filecon "/usr/lib/dinit\.d/early/helpers/binfmt" file file_context))
+
+(in after dinit.helper.hwclock.exec
+
+    (filecon "/usr/lib/dinit\.d/early/helpers/hwclock" file file_context))
+
+(in after dinit.helper.kmod.exec
+
+    (filecon "/usr/lib/dinit\.d/early/helpers/kmod" file file_context))
+
+(in after dinit.helper.lo.exec
+
+    (filecon "/usr/lib/dinit\.d/early/helpers/lo" file file_context))
+
+(in after dinit.helper.mnt.exec
+
+    (filecon "/usr/lib/dinit\.d/early/helpers/mnt" file file_context))
+
+(in after dinit.helper.seedrng.exec
+
+    (filecon "/usr/lib/dinit\.d/early/helpers/seedrng" file file_context))
+
+(in after dinit.helper.swap.exec
+
+    (filecon "/usr/lib/dinit\.d/early/helpers/swap" file file_context))
+
+(in after dinit.helper.swclock.exec
+
+    (filecon "/usr/lib/dinit\.d/early/helpers/swclock" file file_context))
+
+(in after dinit.helper.sysctl.exec
+
+    (filecon "/usr/lib/dinit\.d/early/helpers/sysctl" file file_context))

@@ -6,7 +6,7 @@
     (block agent
 
       (macro type ((type ARG1))
-	     (typeattributeset typeattr ARG1))
+             (typeattributeset typeattr ARG1))
 
       (blockinherit .subj.all_macro_template)
 
@@ -24,31 +24,31 @@
 
       (block exec
 
-	(macro auditexecuteaccess_all_files ((type ARG1))
-	       (allow ARG1 typeattr (file (getattr execute))))
+        (macro auditexecuteaccess_all_files ((type ARG1))
+               (allow ARG1 typeattr (file (getattr execute))))
 
-	(macro entrypoint_all_files ((type ARG1))
-	       (allow ARG1 typeattr (file (entrypoint))))
+        (macro entrypoint_all_files ((type ARG1))
+               (allow ARG1 typeattr (file (entrypoint))))
 
-	(macro map_all_files ((type ARG1))
-	       (allow ARG1 typeattr (file (map))))
+        (macro map_all_files ((type ARG1))
+               (allow ARG1 typeattr (file (map))))
 
-	(macro type ((type ARG1))
-	       (typeattributeset typeattr ARG1))
+        (macro type ((type ARG1))
+               (typeattributeset typeattr ARG1))
 
-	(blockinherit .file.all_macro_template_files)
+        (blockinherit .file.all_macro_template_files)
 
-	(typeattribute typeattr)
+        (typeattribute typeattr)
 
-	(call .agent.exec.type (typeattr)))
+        (call .agent.exec.type (typeattr)))
 
       (block template
 
-	(blockabstract template)
+        (blockabstract template)
 
-	(blockinherit .agent.template)
+        (blockinherit .agent.template)
 
-	(call exec.subj_type_transition (.sys.subj subj))
+        (call subj_type_transition (.dinit.subj))
 
-	(call .sys.agent.exec.type (exec.file))
-	(call .sys.agent.type (subj)))))
+        (call .sys.agent.exec.type (exec.file))
+        (call .sys.agent.type (subj)))))

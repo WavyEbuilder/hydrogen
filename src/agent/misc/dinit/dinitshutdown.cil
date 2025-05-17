@@ -1,0 +1,59 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(in dinit
+
+    (call shutdown.share_subj_processes (subj))
+    (call shutdown.exec.execute_file_files (subj))
+
+    (block shutdown
+
+      (macro share_subj_processes ((type ARG1))
+             (allow ARG1 subj (process (share))))
+
+      (blockinherit .agent.template)
+
+      (call .console.write_serialtermdev_chr_files (subj))
+
+      (call .dinit.unix_stream_connect (subj))
+
+      ;; search for /run/dinitctl
+      (call .run.search_file_pattern.type (subj))
+
+      (call .sys.agent.exec.type (exec.file))
+      (call .sys.agent.type (subj))
+
+      (allow subj self create_unix_stream_socket)
+
+      (block hook
+
+        (call .coreutils.exec.execute_file_files (subj))
+
+        (call .dinit.helper.subj_type_transition (subj))
+        (call .dinit.helper.binfmt.subj_type_transition (subj))
+        (call .dinit.helper.hwclock.subj_type_transition (subj))
+        (call .dinit.helper.kmod.subj_type_transition (subj))
+        (call .dinit.helper.lo.subj_type_transition (subj))
+        (call .dinit.helper.mnt.subj_type_transition (subj))
+        (call .dinit.helper.seedrng.subj_type_transition (subj))
+        (call .dinit.helper.swap.subj_type_transition (subj))
+        (call .dinit.helper.swclock.subj_type_transition (subj))
+        (call .dinit.helper.sysctl.subj_type_transition (subj))
+
+        (call .dinit.service.search_file_dirs (subj))
+
+        ;; For umount
+        (call .mount.subj_type_transition (subj))
+
+        (call .shell.exec.execute_file_files (subj))
+
+        (blockinherit .sys.agent.template))))
+
+(in after .dinit.shutdown.exec
+
+    (filecon "/usr/bin/shutdown" file file_context))
+
+(in after .dinit.shutdown.hook.exec
+
+    (filecon "/etc/dinit/shutdown-hook" file file_context)
+    (filecon "/usr/lib/dinit/shutdown-hook" file file_context))
