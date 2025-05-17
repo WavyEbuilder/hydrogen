@@ -1,0 +1,12 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(block udev
+
+  (call .unconfined.type (subj))
+
+  (blockinherit .sys.agent.template))
+
+(in after udev.exec
+
+    (filecon "/usr/bin/udevadm" file file_context))
