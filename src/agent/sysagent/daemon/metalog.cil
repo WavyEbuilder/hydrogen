@@ -1,0 +1,81 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(block metalog
+
+  (blockinherit .sys.agent.template)
+
+  (allow subj self (capability2 (syslog)))
+  (allow subj self (process (setpgid)))
+
+  (allow subj self create_unix_dgram_socket)
+  (allow subj self create_unix_stream_socket)
+
+  (call conf.list_file_dirs (subj))
+  (call conf.read_file_files (subj))
+
+  (call run.manage_file_files (subj))
+  (call run.run_file_type_transition_file (subj))
+
+  (call .devlog.dev_file_type_transition_file (subj))
+  (call .devlog.manage_file_sock_files (subj))
+
+  (call .locale.data.map_file_pattern.type (subj))
+  (call .locale.read_file_pattern.type (subj))
+
+  (call .log.manage_file_files (subj))
+  (call .log.manage_file_dirs (subj))
+
+  (call .run.deletename_file_dirs (subj))
+
+  (call .sys.syslogconsole_system (subj))
+  (call .sys.syslogmod_system (subj))
+
+  ;; legacy /var/run
+  (call .var.traverse_file_pattern.type (subj))
+
+  (block client
+
+    (macro type ((type ARG1))
+           (typeattributeset typeattr ARG1))
+
+    (typeattribute typeattr)
+
+    (call .devlog.write_file_sock_files (typeattr))
+
+    (call sendto_subj_unix_dgram_sockets (typeattr)))
+
+  (block conf
+
+    (filecon "/etc/metalog\.conf" file file_context)
+
+    (filecon "/etc/metalog\.d" dir file_context)
+    (filecon "/etc/metalog\.d/.*" any file_context)
+
+    (macro conf_file_type_transition_file ((type ARG1))
+           (call .conf.file_type_transition
+                 (ARG1 file file "metalog.conf"))
+           (call .conf.file_type_transition
+                 (ARG1 file dir "metalog.d")))
+
+    (blockinherit .file.conf.template))
+
+  (block run
+
+    (filecon "/run/metalog\.pid" file file_context)
+
+    (macro run_file_type_transition_file ((type ARG1))
+           (call .run.file_type_transition
+                 (ARG1 file file "metalog.pid")))
+
+    (blockinherit .file.macro_template_files)
+    (blockinherit .file.run.template)))
+
+(in file.unconfined
+
+    (call .metalog.conf.conf_file_type_transition_file (typeattr))
+    (call .metalog.run.run_file_type_transition_file (typeattr)))
+
+(in after metalog.exec
+
+    (filecon "/usr/bin/metalog" file file_context))
