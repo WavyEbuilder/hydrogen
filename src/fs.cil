@@ -82,8 +82,14 @@
 
 (block fs
 
+  (macro getattr_all_dirs ((type ARG1))
+         (allow ARG1 typeattr (dir (getattr))))
+
   (macro type ((type ARG1))
-	 (typeattributeset typeattr ARG1))
+         (typeattributeset typeattr ARG1))
+
+  (macro watch_all_dirs ((type ARG1))
+         (allow ARG1 typeattr (dir (watch))))
 
   (typeattribute typeattr)
 

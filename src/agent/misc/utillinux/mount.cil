@@ -16,9 +16,93 @@
 (block mount
 
   (macro dontaudit_link_subj_keyrings ((type ARG1))
-	 (dontaudit ARG1 subj (key (link))))
+         (dontaudit ARG1 subj (key (link))))
 
   (blockinherit .hybrid.agent.template)
+
+  (allow subj self
+         (capability (dac_read_search fowner setgid setuid sys_admin
+                                      sys_rawio)))
+  (allow subj self (cap_userns (dac_override dac_read_search sys_admin)))
+  (allow subj self create_unix_dgram_socket)
+
+  (call exec.execute_file_files (subj))
+
+  (call image.readwrite_all_files (subj))
+  (call image.search_all_dirs (subj))
+
+  (call mountpoint.list_all_dirs (subj))
+  (call mountpoint.mounton_all_dirs (subj))
+
+  (call run.manage_file_dirs (subj))
+  (call run.manage_file_files (subj))
+  (call run.run_file_type_transition_file (subj))
+
+  (call .block.list_sysfile_dirs (subj))
+  (call .block.read_sysfile_lnk_files (subj))
+
+  (call .cert.read_file_pattern.type (subj))
+
+  (call .console.readinherited_serialtermdev_chr_files (subj))
+
+  (call .debug.search_fs_pattern.type (subj))
+
+  (call .dev.traverse_sysfile_pattern.type (subj))
+
+  (call .devices.list_sysfile_pattern.type (subj))
+  (call .devices.read_sysfile_files (subj))
+
+  (call .file.user.home.getattr_all_files (subj))
+  (call .file.user.home.search_all_dirs (subj))
+
+  (call .filesystems.read_procfile_files (subj))
+
+  (call .fs.getattr_all_dirs (subj))
+
+  (call .fs.getattr_all_fs (subj))
+  (call .fs.mount_all_fs (subj))
+  (call .fs.remount_all_fs (subj))
+  ;; mount -o fscontext=\"...\"
+  (call .fs.relabel_all_fs (subj))
+  (call .fs.unmount_all_fs (subj))
+
+  (call .fs.read_sysctlfile_files (subj))
+  (call .fs.search_sysctlfile_pattern.type (subj))
+
+  (call .fstab.read_file_files (subj))
+
+  (call .list_invalid_dirs (subj))
+
+  (call .locale.data.map_file_pattern.type (subj))
+  (call .locale.read_file_pattern.type (subj))
+
+  (call .loopcontrol.readwrite_nodedev_chr_files (subj))
+
+  (call .metalog.client.type (subj))
+
+  (call .ns.read_fs_pattern.type (subj))
+
+  (call .nss.passwdgroup.type (subj))
+
+  (call .rbacsep.exempt.subj.type (subj))
+
+  (call .selinux.linked.type (subj))
+
+  (call .stordev.readwrite.type (subj))
+  (call .stordev.readwrite_all_blk_files (subj))
+  (call .stordev.readwrite_all_chr_files (subj))
+
+  (call .sys.dontaudit_setsched_subj_processes (subj))
+  (call .sys.modulerequest_system (subj))
+
+  (call .sys.tmpfs.appendinherited_file_files (subj))
+  (call .sys.tmpfs.auditwriteaccess_file_dirs (subj))
+  (call .sys.tmpfs.list_file_dirs (subj))
+
+  (call .list_unlabeled_dirs (subj))
+
+  ;; /var/run
+  (call .var.read_file_lnk_files (subj))
 
   (block image
 
@@ -92,6 +176,9 @@
 
     (filecon "/run/mount" dir file_context)
     (filecon "/run/mount/.*" any ())
+
+    (macro dontaudit_readwriteinherited_file_dirs ((type ARG1))
+           (dontaudit ARG1 file readwriteinherited_dir))
 
     (macro watch_file_dirs ((type ARG1))
            (allow ARG1 file (dir (watch))))
