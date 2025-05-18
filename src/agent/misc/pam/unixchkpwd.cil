@@ -25,7 +25,9 @@
   (call .selinux.linked.type (subj))
 
   (call .shadow.read_file_files (subj))
-  (call .shadow.read.type (subj)))
+  (call .shadow.read.type (subj))
+
+  (call .user.termdev.dontaudit_readwriteinherited_all_chr_files (subj)))
 
 (in after unixchkpwd.exec
 
