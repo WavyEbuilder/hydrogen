@@ -18,6 +18,8 @@
 
   (call .loginserialtermdev.dontaudit_readwriteinherited_all_chr_files (subj))
 
+  (call .metalog.client.type (subj))
+
   (call .nss.passwdgroup.type (subj))
 
   (call .proc.getattr_fs_pattern.type (subj))

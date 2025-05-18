@@ -18,6 +18,8 @@
   (call .locale.data.map_file_pattern.type (subj))
   (call .locale.read_file_pattern.type (subj))
 
+  (call .metalog.client.type (subj))
+
   (call .nss.linked.type (subj))
 
   (call .passwd.manage_file_files (subj))
