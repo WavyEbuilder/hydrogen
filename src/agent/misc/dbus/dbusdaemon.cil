@@ -1,0 +1,18 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(in dbus
+
+    (allow subj self (unix_stream_socket (listen)))
+
+    (call client.read_all_states (subj))
+
+    (call .state.search_file_pattern.type (subj))
+
+    (call .sys.read_subj_states (subj))
+
+    (call .sys.user.read_subj_states (subj)))
+
+(in dbus.common
+
+    (call .locale.data.read_file_pattern.type (typeattr)))
