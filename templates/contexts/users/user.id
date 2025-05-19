@@ -1,2 +1,3 @@
+sys.role:openssh.server.subj@MCS_SUFFIX@ user.role:user.subj@MCS_SUFFIX@
 sys.role:sys.subj@MCS_SUFFIX@ user.role:user.subj@MCS_SUFFIX@
 sys.role:turnstile.subj@MCS_SUFFIX@ user.role:user.dinit.subj@MCS_SUFFIX@
