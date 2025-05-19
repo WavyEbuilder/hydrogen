@@ -1,0 +1,45 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(in openssh
+
+    (block keygen
+
+      (blockinherit .hybrid.agent.template)
+
+      (allow subj self (process (setfscreate)))
+
+      (call .cert.read_file_files (subj))
+      (call .cert.search_file_pattern.type (subj))
+
+      (call .checkcontext_selinux_security (subj))
+
+      (call .crypto.read_sysctlfile_pattern.type (subj))
+
+      (call .locale.data.map_file_pattern.type (subj))
+      (call .locale.read_file_pattern.type (subj))
+
+      (call .nss.passwdgroup.type (subj))
+
+      (call .selinux.file.read_file_pattern.type (subj))
+      (call .selinux.readwrite_fs_pattern.type (subj))
+
+      (optional opensshkeygen_certhomefile
+                (call .cert.home.read_file_files (subj))
+                (call .cert.home.search_file_dirs (subj)))
+
+      (optional opensshkeygen_opensshclient
+                (call openssh.agent.unix_stream_connect (subj))
+                (call openssh.home.manage_file_dirs (subj))
+                (call openssh.home.manage_file_files (subj))
+                (call openssh.home.user_home_file_type_transition_file (subj)))
+
+      (optional opensshkeygen_userhomefile
+                (call .user.home.manage_file_files (subj)))
+
+      (optional opensshkeygen_userrunfile
+                (call .user.run.search_file_pattern.type (subj)))))
+
+(in after openssh.keygen.exec
+
+    (filecon "/usr/bin/ssh-keygen" file file_context))
