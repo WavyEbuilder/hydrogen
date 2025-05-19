@@ -1,0 +1,73 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(in file.unconfined
+
+    (call .user.dinit.service.dinit_service_file_type_transition_file
+          (typeattr)))
+
+(in file.user
+
+    (block service
+
+      (macro type ((type ARG1))
+             (typeattributeset typeattr ARG1))
+
+      (blockinherit file.all_macro_template_files)
+
+      (typeattribute typeattr)
+
+      (call file.data.dinit.type (typeattr))
+
+      (block base_template
+
+        (blockabstract base_template)
+
+        (blockinherit .file.base_template)
+
+        (call .file.user.service.type (file)))
+
+      (block template
+
+        (blockabstract template)
+
+        (blockinherit .file.macro_template_files)
+        (blockinherit .file.user.service.base_template))))
+
+(in user
+
+    (call dinit.role (role))
+
+    (block dinit
+
+      (macro role ((role ARG1))
+             (roleattributeset roleattr ARG1))
+
+      (macro subj_type_transition ((type ARG1))
+             (allow ARG1 subj (process (transition)))
+
+             (allow subj ARG1 (process (sigchld)))
+             (allow subj ARG1 (fd (use)))
+             (allow subj ARG1 readwriteinherited_fifo_file)
+
+             (call .dinit.exec.mapexecute_file_files (ARG1))
+             (call .dinit.exec.read_file_files (ARG1))
+             (call .dinit.exec.subj_type_transition (ARG1 subj)))
+
+      (blockinherit .subj.common.base_template)
+
+      (roleattribute roleattr)
+      (roletype roleattr subj)
+
+      (block service
+
+        (filecon "/usr/lib/dinit\.d/user" dir file_context)
+        (filecon "/usr/lib/dinit\.d/user/.*" any file_context)
+
+        (macro dinit_service_file_type_transition_file ((type ARG1))
+               (call .dinit.service.file_type_transition
+                     (ARG1 file dir "dinit\.d")))
+
+        (blockinherit .file.macro_template_dirs)
+        (blockinherit .file.macro_template_lnk_files)
+        (blockinherit .file.user.service.template))))
