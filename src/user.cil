@@ -64,6 +64,9 @@
 
       (call .computecreate_selinux_security (typeattr))
 
+      (call .coreutils.exec.entrypoint_file_files (typeattr))
+      (call .coreutils.exec.execute_file_files (typeattr))
+
       (call .cpu.read_sysfile_pattern.type (typeattr))
 
       (call .cpuinfo.read_procfile_files (typeattr))
