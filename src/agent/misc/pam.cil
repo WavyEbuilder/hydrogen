@@ -178,6 +178,8 @@
 
     (call .unixupdate.subj_type_transition (typeattr))
 
+    (call .user.mail.spool.getattr_file_files (typeattr))
+
     (call .utmp.log.writeinherited_file_files (typeattr))
     (call .utmp.run.writeinherited_file_files (typeattr))
 
