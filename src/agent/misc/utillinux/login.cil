@@ -1,0 +1,135 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(block login
+
+  (blockinherit .dbus.client.template)
+  (blockinherit .sys.agent.template)
+
+  (allow subj self
+         (capability (audit_write dac_override dac_read_search sys_tty_config)))
+  (allow subj self (process (getcap setcap)))
+  (allow subj self create_netlink_audit_socket)
+  (allow subj self create_unix_dgram_socket)
+  (allow subj self (netlink_audit_socket (nlmsg_relay)))
+  (dontaudit subj self (key (write)))
+
+  (call .caplastcap.read_sysctlfile_pattern.type (subj))
+
+  (call .cgroup.getattr_fs_pattern.type (subj))
+
+  (call .cmdline.read_procfile_pattern.type (subj))
+
+  (call .crypto.read_sysctlfile_pattern.type (subj))
+
+  (call .locale.data.map_file_pattern.type (subj))
+  (call .locale.read_file_pattern.type (subj))
+
+  (call .loginserialtermdev.open_all_chr_files (subj))
+  (call .loginserialtermdev.readwriteinherited_all_chr_files (subj))
+  (call .loginserialtermdev.relabel_all_chr_files (subj))
+  (call .loginserialtermdev.setattr_all_chr_files (subj))
+
+  (call .metalog.client.type (subj))
+
+  (call .ngroupsmax.read_sysctlfile_pattern.type (subj))
+
+  (call .nss.passwdgroup.type (subj))
+
+  (call .osrelease.read_sysctlfile_pattern.type (subj))
+
+  (call .pam.login.type (subj))
+
+  (call .proc.getattr_fs_pattern.type (subj))
+
+  (call .random.read_sysctlfile_pattern.type (subj))
+
+  (call .state.search_file_pattern.type (subj))
+
+  (call .sys.read_subj_states (subj))
+
+  (call .sys.termdev.open_all_chr_files (subj))
+  (call .sys.termdev.relabel_all_chr_files (subj))
+  (call .sys.termdev.setattr_all_chr_files (subj))
+
+  (call .user.run.search_file_pattern.type (subj))
+
+  (call .xattr.getattr_fs_pattern.type (subj))
+
+  (optional login_unprivuser
+            (call .user.unpriv.create_all_keyrings (subj))
+            (call .user.unpriv.rlimitinh_all_processes (subj))
+            (call .user.unpriv.signal_all_processes (subj))
+            (call .user.unpriv.signull_all_processes (subj))
+            (call .user.unpriv.transition_all_processes (subj))
+            (call .user.unpriv.write_all_keyrings (subj)))
+
+  (optional login_usertermdev
+            (call .user.termdev.open_all_chr_files (subj))
+            (call .user.termdev.readwriteinherited_all_chr_files (subj))
+            (call .user.termdev.relabel_all_chr_files (subj))
+            (call .user.termdev.setattr_all_chr_files (subj)))
+
+  (block sulogin
+
+    (blockinherit .sys.agent.template)
+
+    (allow subj self (capability (dac_read_search sys_tty_config)))
+    (allow subj self (process (getpgid setexec setsched)))
+    (allow subj self (capability2 (checkpoint_restore)))
+
+    (call .checkcontext_selinux_security (subj))
+    (call .computerelabel_selinux_security (subj))
+    (call .computeuser_selinux_security (subj))
+
+    (call .console.open_serialtermdev_chr_files (subj))
+    (call .console.readwriteinherited_serialtermdev_chr_files (subj))
+
+    (call .consoles.read_procfile_files (subj))
+
+    (call .dev.list_file_pattern.type (subj))
+
+    (call .locale.data.map_file_pattern.type (subj))
+    (call .locale.read_file_pattern.type (subj))
+
+    (call .loginserialtermdev.open_all_chr_files (subj))
+    (call .loginserialtermdev.readwriteinherited_all_chr_files (subj))
+    (call .loginserialtermdev.relabel_all_chr_files (subj))
+
+    (call .nss.passwdgroup.type (subj))
+
+    (call .random.read_sysctlfile_pattern.type (subj))
+
+    (call .selinux.default.read_file_pattern.type (subj))
+    (call .selinux.readwrite_fs_pattern.type (subj))
+
+    (call .serialtermdev.getattr_all_chr_files (subj))
+
+    (call .shadow.read.type (subj))
+    (call .shadow.read_file_files (subj))
+
+    (call .shell.exec.mapexecute_file_files (subj))
+    (call .shell.exec.read_file_files (subj))
+
+    (call .subj.interactivefd.type (subj))
+
+    (call .sys.open_serialtermdev_chr_files (subj))
+    (call .sys.relabel_serialtermdev_chr_files (subj))
+
+    ;; failsafe_context
+    (call .sys.user.signal_subj_processes (subj))
+    (call .sys.user.signull_subj_processes (subj))
+    (call .sys.user.transition_subj_processes (subj))))
+
+(in getty
+
+    (call .login.rlimitinh_subj_processes (subj))
+    (call .login.subj_type_transition (subj)))
+
+(in after login.exec
+
+    (filecon "/usr/bin/login" file file_context))
+
+(in after login.sulogin.exec
+
+    (filecon "/usr/bin/sulogin" file file_context))

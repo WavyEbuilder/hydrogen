@@ -3,8 +3,17 @@
 
 (block serialtermdev
 
+  (macro getattr_all_chr_files ((type ARG1))
+         (allow ARG1 typeattr (chr_file (getattr))))
+
+  (macro open_all_chr_files ((type ARG1))
+         (allow ARG1 typeattr (chr_file (open))))
+
+  (macro setattr_all_chr_files ((type ARG1))
+         (allow ARG1 typeattr (chr_file (setattr))))
+
   (macro type ((type ARG1))
-	 (typeattributeset typeattr ARG1))
+         (typeattributeset typeattr ARG1))
 
   (typeattribute typeattr)
 
@@ -17,7 +26,7 @@
     (blockabstract base_template)
 
     (context serialtermdev_context
-	     (.sys.id .sys.role serialtermdev .sys.lowlow))
+             (.sys.id .sys.role serialtermdev .sys.lowlow))
 
     (type serialtermdev)
     (call .serialtermdev.type (serialtermdev)))
@@ -93,7 +102,7 @@
   (block unconfined
 
     (macro type ((type ARG1))
-	   (typeattributeset typeattr ARG1))
+           (typeattributeset typeattr ARG1))
 
     (typeattribute typeattr)
 
