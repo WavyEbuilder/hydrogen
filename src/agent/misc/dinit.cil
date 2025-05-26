@@ -94,11 +94,11 @@
 
     (macro conf_file_type_transition_file ((type ARG1))
            (call .conf.file_type_transition
-                 (ARG1 file dir "dinit\.d")))
+                 (ARG1 file dir "dinit.d")))
 
     (macro lib_file_type_transition_file ((type ARG1))
            (call .lib.file_type_transition
-                 (ARG1 file dir "dinit\.d")))
+                 (ARG1 file dir "dinit.d")))
 
     (call .file.service.type (file))
 
