@@ -85,6 +85,9 @@
 
     (call .unixchkpwd.subj_type_transition (typeattr))
 
+    (call .user.unpriv.link_all_keyrings (typeattr))
+    (call .user.unpriv.search_all_keyrings (typeattr))
+
     (call .utmp.log.append_file_files (typeattr))
     (call .utmp.log.dontaudit_writeinherited_file_files (typeattr))
     (call .utmp.log.read_file_files (typeattr))
