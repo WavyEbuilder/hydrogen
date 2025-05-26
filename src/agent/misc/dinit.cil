@@ -3,7 +3,7 @@
 
 (block dinit
 
-  (blockinherit .hybrid.agent.template)
+  (blockinherit .agent.template)
 
   (boolean allow_unknown_agents true)
 
@@ -24,6 +24,8 @@
   (macro readwrite_subj_unix_stream_sockets ((type ARG1))
          (allow ARG1 subj readwrite_unix_stream_socket))
 
+  (roletype .sys.role subj)
+
   (allow subj self create_unix_dgram_socket)
   (allow subj self create_unix_stream_socket)
   (allow subj self (capability (kill sys_admin sys_boot)))
@@ -38,6 +40,8 @@
 
   (call service.list_file_dirs (subj))
   (call service.read_file_files (subj))
+
+  (call subj_type_transition (.sys.subj))
 
   ;; After udev is loaded and has relabeled /dev, dinit might
   ;; loose access to /dev/console as it is no longer devtmp.fs
@@ -173,4 +177,6 @@
 
 (in after dinit.exec
 
-    (filecon "/usr/bin/dinit" file file_context))
+    (filecon "/usr/bin/dinit" file file_context)
+
+    (call .hybrid.agent.exec.type (file)))
