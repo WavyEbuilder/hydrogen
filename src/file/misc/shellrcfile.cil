@@ -23,8 +23,6 @@
 	 (call .conf.file_type_transition
 	       (ARG1 file file "profile"))
 	 (call .conf.file_type_transition
-	       (ARG1 file file "profile.env"))
-	 (call .conf.file_type_transition
 	       (ARG1 file dir "profile.d")))
 
   (blockinherit .file.conf.template))
