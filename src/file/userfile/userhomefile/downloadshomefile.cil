@@ -1,0 +1,64 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(in file.unconfined
+
+    (call .downloads.home.user_home_file_type_transition_file (typeattr)))
+
+(block downloads
+
+  (block home
+
+    (filecon "HOME_DIR/Downloads" dir file_context)
+    (filecon "HOME_DIR/Downloads/.*" any file_context)
+
+    (macro user_home_file_type_transition_file ((type ARG1))
+           (call .user.home.file_type_transition
+                 (ARG1 file dir "Downloads")))
+
+    (blockinherit .file.macro_template_dirs)
+    (blockinherit .file.macro_template_lnk_files)
+    (blockinherit .file.user.home.base_template)
+
+    (call .mount.mountpoint.type (file))
+
+    (block read_file_pattern
+
+      (macro type ((type ARG1))
+             (typeattributeset typeattr ARG1))
+
+      (typeattribute typeattr)
+
+      (call list_file_dirs (typeattr))
+      (call read_file_lnk_files (typeattr))
+
+      (call .user.home.search_file_pattern.type (typeattr)))
+
+    (block search_file_pattern
+
+      (macro type ((type ARG1))
+             (typeattributeset typeattr ARG1))
+
+      (typeattribute typeattr)
+
+      (call search_file_dirs (typeattr))
+
+      (call .user.home.search_file_pattern.type (typeattr)))
+
+    (block traverse_file_pattern
+
+      (macro type ((type ARG1))
+             (typeattributeset typeattr ARG1))
+
+      (typeattribute typeattr)
+
+      (call read_file_lnk_files (typeattr))
+      (call search_file_pattern.type (typeattr)))))
+
+(in user
+
+    (call .downloads.home.manage_file_dirs (subj))
+    (call .downloads.home.manage_file_lnk_files (subj))
+    (call .downloads.home.relabel_file_dirs (subj))
+    (call .downloads.home.relabel_file_lnk_files (subj))
+    (call .downloads.home.user_home_file_type_transition_file (subj)))
