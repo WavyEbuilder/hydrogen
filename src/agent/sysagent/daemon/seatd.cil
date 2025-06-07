@@ -1,0 +1,62 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(block seatd
+
+  (blockinherit .sys.agent.template)
+
+  (macro unix_stream_connect ((type ARG1))
+         (call connectto_subj_unix_stream_sockets (ARG1))
+         (call run.write_file_sock_files (ARG1)))
+
+  ;; TODO: maybe doesn't need cap_dac_override?
+  (allow subj self (capability (chown dac_override sys_admin sys_tty_config)))
+  (allow subj self (unix_stream_socket (accept listen)))
+
+  (call run.manage_file_sock_files (subj))
+  (call run.run_file_type_transition_file (subj))
+
+  (call .dri.readwrite_nodedev_pattern.type (subj))
+
+  ;; TODO: does seatd actually need this? afaik arbitrary read write of events
+  ;; in /dev/input allows keylogging and possibly key input simulation.
+  (call .event.readwrite_nodedev_pattern.type (subj))
+
+  (call .nss.passwdgroup.type (subj))
+
+  (call .rbacsep.usefdtarget.type (subj))
+
+  (call .sys.open_serialtermdev_chr_files (subj))
+
+  (call .tty.readwrite_serialtermdev_chr_files (subj))
+
+  (block client
+
+    (macro type ((type ARG1))
+           (typeattributeset typeattr ARG1))
+
+    (typeattribute typeattr)
+
+    (call seatd.unix_stream_connect (typeattr))
+    (call seatd.use_subj_fds (typeattr)))
+
+  (block run
+
+    (filecon "/run/seatd\.sock" socket file_context)
+
+    (macro run_file_type_transition_file ((type ARG1))
+           (call .run.file_type_transition
+                 (ARG1 file sock_file "seatd.sock")))
+
+    (blockinherit .file.macro_template_sock_files)
+    (blockinherit .file.run.base_template)
+
+    (call .rbacsep.exempt.obj.type (file))))
+
+(in file.unconfined
+
+    (call .seatd.run.run_file_type_transition_file (typeattr)))
+
+(in after seatd.exec
+
+    (filecon "/usr/bin/seatd" file file_context))
