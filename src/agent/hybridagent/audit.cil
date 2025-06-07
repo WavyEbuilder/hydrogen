@@ -1,0 +1,99 @@
+;; SPDX-FileCopyrightText: © 2025 Rahul Sandhu <nvraxn@gmail.com>
+;; SPDX-License-Identifier: GPL-3.0-or-later
+
+(block audit
+
+  (block client
+
+    )
+
+  (block conf
+
+    (filecon "/etc/audit" dir file_context)
+    (filecon "/etc/audit/.*" any file_context)
+
+    (macro conf_file_type_transition_file ((type ARG1))
+           (call .conf.file_type_transition
+                 (ARG1 file dir "audit")))
+
+    (macro map_file_files ((type ARG1))
+           (allow ARG1 file (file (map))))
+
+    (blockinherit .file.conf.template))
+
+  (block log
+
+    (filecon "/var/log/audit" dir file_context)
+    (filecon "/var/log/audit/.*" any file_context)
+
+    (macro log_file_type_transition_file ((type ARG1))
+           (call .log.file_type_transition
+                 (ARG1 file dir "audit")))
+
+    (macro setattr_file_dirs ((type ARG1))
+           (allow ARG1 file (dir (setattr))))
+
+    (macro setattr_file_files ((type ARG1))
+           (allow ARG1 file (file (setattr))))
+
+    (blockinherit .file.log.template))
+
+  (block run
+
+    (filecon "/run/auditd\.pid" file file_context)
+
+    (macro run_file_type_transition_file ((type ARG1))
+           (call .run.file_type_transition
+                 (ARG1 file file "auditd.pid")))
+
+    (blockinherit .file.run.template))
+
+  (block server
+
+    (blockinherit .sys.agent.template)
+
+    (allow subj self create_netlink_audit_socket)
+    (allow subj self create_unix_dgram_socket)
+
+    ;; TODO: why does this need sys_nice?
+    (allow subj self (capability (audit_control sys_nice sys_resource)))
+    (allow subj self (netlink_audit_socket (nlmsg_read nlmsg_write)))
+    (allow subj self (process (getcap setsched)))
+
+    (call audit.conf.list_file_dirs (subj))
+    (call audit.conf.map_file_files (subj))
+    (call audit.conf.read_file_files (subj))
+
+    (call audit.log.append_file_files (subj))
+    (call audit.log.create_file_files (subj))
+    (call audit.log.log_file_type_transition_file (subj))
+    (call audit.log.list_file_dirs (subj))
+    (call audit.log.read_file_files (subj)) ;; TODO: do we actually need this?
+    (call audit.log.setattr_file_dirs (subj))
+    (call audit.log.setattr_file_files (subj))
+
+    (call audit.run.manage_file_files (subj))
+    (call audit.run.run_file_type_transition_file (subj))
+
+    (call .caplastcap.read_sysctlfile_pattern.type (subj))
+
+    (call .devlog.write_file_sock_files (subj))
+
+    (call .fs.getattr_all_fs (subj))
+
+    (call .locale.data.map_file_pattern.type (subj))
+    (call .locale.read_file_pattern.type (subj))
+
+    (call .metalog.client.type (subj))
+
+    (call .nss.passwdgroup.type (subj))))
+
+(in file.unconfined
+
+    (call .audit.conf.conf_file_type_transition_file (typeattr))
+    (call .audit.log.log_file_type_transition_file (typeattr))
+    (call .audit.run.run_file_type_transition_file (typeattr)))
+
+(in after audit.server.exec
+
+    (filecon "/usr/bin/auditd" file file_context))
